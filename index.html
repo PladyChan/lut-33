@@ -492,7 +492,7 @@
   <header>
     <div class="eyebrow"><span class="dot"></span> CUBE · LUT · RESAMPLER</div>
     <h1>→ <em>33³</em></h1>
-    <p class="sub">选文件，自动转换到 33×33×33，自动下载。</p>
+    <p class="sub">选文件，自动转换到 33×33×33，点 ↓ 保存。</p>
   </header>
 
   <button class="pick-btn" id="pickBtn" type="button">
@@ -500,7 +500,7 @@
     <div class="pick-btn-main">选择 .cube 文件</div>
     <div class="pick-btn-sub">tap to select · multi-file ok</div>
   </button>
-  <input type="file" id="fileInput" multiple style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
+  <input type="file" id="fileInput" multiple accept=".cube,application/octet-stream,text/plain" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
 
   <div class="dest" id="destBlock" style="display:none;">
     <div class="dest-icon">↓</div>
@@ -546,9 +546,15 @@
 const CONFIG = {
   targetSize: 33,
   precision: 6,
-  suffix: '_33',
   clamp: true
 };
+
+/* Suffix = "_MMDDHHmm" using local time, e.g. _05051324 */
+function makeSuffix() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `_${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}`;
+}
 
 /* ============ CUBE PARSER ============ */
 function parseCube(text) {
@@ -830,7 +836,7 @@ async function startPipeline(files) {
       const resampled = resampleLUT(sourceLut, CONFIG.targetSize);
       resultText = serializeCube(resampled, file.name, CONFIG.precision, CONFIG.clamp, ladyMetaToggle.checked);
       const base = file.name.replace(/\.cube$/i, '');
-      resultName = `${base}${CONFIG.suffix}.cube`;
+      resultName = `${base}${makeSuffix()}.cube`;
     } catch (e) {
       console.error(e);
       row.className = 'progress-row error';
@@ -857,7 +863,7 @@ async function startPipeline(files) {
     }
 
     if (!savedTo) {
-      triggerAnchorDownload(blob, resultName, row);
+      prepareDownloadLink(blob, resultName, row);
       savedTo = resultName;
     }
 
@@ -878,7 +884,7 @@ async function startPipeline(files) {
     if (outputDirHandle) {
       msg += ` · 已保存到 <strong>${outputDirHandle.name}/</strong>`;
     } else {
-      msg += isiOS ? ` · 点下方按钮保存` : ` · 已发起下载`;
+      msg += ` · 点 <strong>↓ 保存</strong> 下载`;
     }
     summary.innerHTML = msg;
     summary.classList.add('show');
@@ -893,15 +899,10 @@ async function startPipeline(files) {
   else if (done) showToast(`${done} 完成 · ${errors} 失败`, 'error');
 }
 
-function triggerAnchorDownload(blob, filename, row) {
+// Prepare a manual download link in the row. Does NOT auto-trigger; the user
+// taps the "保存" button when ready (per request).
+function prepareDownloadLink(blob, filename, row) {
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  try { a.click(); } catch (e) {}
-  document.body.removeChild(a);
 
   if (row) {
     const existing = row.querySelector('.dl-link');
@@ -942,14 +943,6 @@ async function offerZipDownload(results) {
     <a class="dl-link" href="${url}" download="${filename}">↓ ZIP</a>
   `;
   statusArea.insertBefore(zipRow, statusArea.firstChild);
-
-  const autoA = document.createElement('a');
-  autoA.href = url;
-  autoA.download = filename;
-  autoA.style.display = 'none';
-  document.body.appendChild(autoA);
-  try { autoA.click(); } catch {}
-  document.body.removeChild(autoA);
 
   setTimeout(() => URL.revokeObjectURL(url), 10 * 60 * 1000);
 }
