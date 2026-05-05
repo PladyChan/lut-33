@@ -72,7 +72,8 @@
     width: 100%;
     max-width: 540px;
     margin: 0 auto;
-    padding: 32px 20px 40px;
+    /* Extra bottom padding so Safari's bottom bar doesn't overlap the footer */
+    padding: 32px 20px max(80px, env(safe-area-inset-bottom));
     position: relative;
     z-index: 1;
     display: flex;
@@ -535,7 +536,7 @@
 
   <footer>
     <div>33³ · catmull-rom cubic · clamped · local-only</div>
-    <div><span id="footerCount">—</span> files processed</div>
+    <div id="footerStats">v1.3 · ready</div>
   </footer>
 </div>
 
@@ -712,7 +713,8 @@ const statusArea = $('statusArea');
 const summary = $('summary');
 const toast = $('toast');
 const iosNote = $('iosNote');
-const footerCount = $('footerCount');
+const footerStats = $('footerStats');
+const VERSION = 'v1.3';
 const ladyMetaToggle = $('ladyMetaToggle');
 
 // Restore toggle state from localStorage (persists across visits)
@@ -875,7 +877,7 @@ async function startPipeline(files) {
     results.push({ name: resultName, blob, text: resultText, row });
     done++;
     totalProcessed++;
-    footerCount.textContent = totalProcessed;
+    footerStats.textContent = `${VERSION} · ${totalProcessed} processed`;
   }
 
   if (done > 0) {
