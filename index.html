@@ -124,8 +124,9 @@
   header .sub {
     color: var(--text-dim);
     font-size: 12px;
-    max-width: 320px;
+    max-width: none;
     margin: 0 auto;
+    white-space: nowrap;
   }
 
   .pick-btn {
@@ -246,78 +247,111 @@
   }
   .dest-change:hover { text-decoration: underline; text-underline-offset: 3px; }
 
-  /* TOGGLE ROW (same chassis as .dest) */
-  .toggle-row {
+  .cube-option-row {
     margin-top: 8px;
-    padding: 14px 16px;
+    padding: 12px 14px;
     background: var(--bg-elev);
     border: 1px solid var(--line);
     border-radius: 4px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     font-size: 11px;
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     transition: border-color 150ms;
   }
-  .toggle-row:hover { border-color: var(--line-bright); }
-
-  .toggle-row .dest-icon {
-    /* reuse */
+  .cube-option-row:hover { border-color: var(--line-bright); }
+  .cube-option-row.is-hidden { display: none; }
+  .cube-option-row input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--accent);
+    flex-shrink: 0;
   }
-
-  .toggle-row .tlabel {
-    color: var(--text-faint);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-size: 10px;
+  .cube-option-copy {
+    min-width: 0;
   }
-  .toggle-row .tvalue {
+  .cube-option-copy strong {
+    display: block;
     color: var(--text);
-    flex: 1;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .cube-option-copy span {
+    display: block;
+    color: var(--text-faint);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  /* the actual switch */
-  .switch {
+  .mode-row {
+    margin-top: 8px;
+    padding: 6px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .mode-option {
     position: relative;
-    width: 38px;
-    height: 22px;
-    flex-shrink: 0;
+    min-width: 0;
   }
-  .switch input {
-    position: absolute;
-    width: 100%; height: 100%;
-    opacity: 0;
-    cursor: pointer;
-    z-index: 2;
-    margin: 0;
-  }
-  .switch .track {
+  .mode-option input {
     position: absolute;
     inset: 0;
-    background: var(--line-bright);
-    border-radius: 11px;
-    transition: background 200ms;
+    opacity: 0;
+    cursor: pointer;
   }
-  .switch .knob {
-    position: absolute;
-    top: 3px; left: 3px;
-    width: 16px; height: 16px;
-    background: var(--text-dim);
-    border-radius: 50%;
-    transition: transform 200ms cubic-bezier(.2,.9,.3,1), background 200ms;
+  .mode-option span {
+    display: block;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    color: var(--text-dim);
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: all 160ms;
   }
-  .switch input:checked ~ .track {
-    background: var(--accent-dim);
+  .mode-option input:checked + span {
+    background: rgba(212, 255, 58, 0.08);
+    border-color: var(--accent-dim);
+    color: var(--accent);
   }
-  .switch input:checked ~ .knob {
-    transform: translateX(16px);
+
+  .convert-btn {
+    width: 100%;
+    margin-top: 8px;
+    min-height: 48px;
+    border: 1px solid var(--accent-dim);
+    border-radius: 4px;
     background: var(--accent);
+    color: var(--bg);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 160ms, transform 160ms;
+  }
+  .convert-btn:active { transform: scale(0.99); }
+  .convert-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 
   .status-area {
@@ -492,8 +526,8 @@
 
   <header>
     <div class="eyebrow"><span class="dot"></span> CUBE · LUT · RESAMPLER</div>
-    <h1>→ <em>33³</em></h1>
-    <p class="sub">选文件，自动转换到 33×33×33，点 ↓ 保存。</p>
+    <h1 id="heroTitle">→ <em>33³</em></h1>
+    <p class="sub" id="heroSub">选文件，转换到 33×33×33，点 ↓ 保存。</p>
   </header>
 
   <button class="pick-btn" id="pickBtn" type="button">
@@ -503,27 +537,42 @@
   </button>
   <input type="file" id="fileInput" multiple accept=".cube,application/octet-stream,text/plain" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" />
 
-  <div class="dest" id="destBlock" style="display:none;">
-    <div class="dest-icon">↓</div>
-    <div style="flex:1; min-width:0;">
-      <div class="dest-label">save to</div>
-      <div class="dest-value" id="destValue">downloads</div>
-    </div>
-    <button class="dest-change" id="destChange" type="button">change</button>
+  <div class="mode-row" aria-label="输出格式">
+    <label class="mode-option">
+      <input type="checkbox" id="cubeOutputToggle" checked />
+      <span>33³ CUBE</span>
+    </label>
+    <label class="mode-option">
+      <input type="checkbox" id="xmpOutputToggle" />
+      <span>Adobe XMP</span>
+    </label>
   </div>
 
-  <label class="toggle-row" for="ladyMetaToggle">
-    <div class="dest-icon">P</div>
-    <div style="flex:1; min-width:0;">
-      <div class="tlabel">metadata · LUMIX × Plady</div>
-      <div class="tvalue">写入 STD 标记 + Plady 版权声明</div>
-    </div>
-    <span class="switch">
-      <input type="checkbox" id="ladyMetaToggle" />
-      <span class="track"></span>
-      <span class="knob"></span>
+  <label class="cube-option-row" id="cubeMetaOption" for="ladyMetaToggle">
+    <input type="checkbox" id="ladyMetaToggle" />
+    <span class="cube-option-copy">
+      <strong>写入 STD 标记</strong>
+      <span>LUMIX Photo Style header</span>
     </span>
   </label>
+
+  <label class="cube-option-row" id="copyrightOption" for="copyrightToggle">
+    <input type="checkbox" id="copyrightToggle" />
+    <span class="cube-option-copy">
+      <strong>写入 Plady Copyright</strong>
+      <span>#Copyright: (C) Copyright YYYY Plady</span>
+    </span>
+  </label>
+
+  <label class="cube-option-row" for="timestampToggle">
+    <input type="checkbox" id="timestampToggle" />
+    <span class="cube-option-copy">
+      <strong>添加时间后缀</strong>
+      <span>在输出文件名后添加 _MMDDHHmm</span>
+    </span>
+  </label>
+
+  <button class="convert-btn" id="convertButton" type="button" disabled>转换</button>
 
   <div class="status-area" id="statusArea"></div>
 
@@ -548,6 +597,26 @@ const CONFIG = {
   targetSize: 33,
   precision: 6,
   clamp: true
+};
+
+const XMP_CONFIG = {
+  targetSize: 32,
+  amount: 100,
+  rangeMin: 0,
+  rangeMax: 200,
+  primaries: 'sRGB',
+  gamut: 'clip',
+  toneMapStrength: 'high',
+  group: 'Plady 预设'
+};
+
+const XMP_ENCODE_TABLE = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?`'|()[]{}@%$#";
+const XMP_PRIMARY_MAP = {
+  sRGB: { colors: 0, gamma: 1 },
+  Adobe: { colors: 1, gamma: 3 },
+  ProPhoto: { colors: 2, gamma: 2 },
+  P3: { colors: 3, gamma: 1 },
+  Rec2020: { colors: 4, gamma: 4 }
 };
 
 /* Suffix = "_MMDDHHmm" using local time, e.g. _05051324 */
@@ -650,17 +719,16 @@ function resampleLUT(lut, targetSize) {
 }
 
 /* ============ SERIALIZE (strict) ============ */
-function serializeCube(lut, sourceFilename, precision, clamp, ladyMeta) {
+function serializeCube(lut, sourceFilename, precision, clamp, stdHeader, copyright) {
   const lines = [];
   let title = lut.title || sourceFilename.replace(/\.cube$/i, '');
   const cleanTitle = String(title).replace(/"/g, '');
   const dmin = lut.domainMin || [0,0,0];
   const dmax = lut.domainMax || [1,1,1];
 
-  if (ladyMeta) {
-    // Replicate the LUMIX × Plady header layout exactly
+  if (stdHeader) {
     const year = new Date().getFullYear();
-    lines.push(`#Copyright: (C) Copyright ${year} Plady`);
+    if (copyright) lines.push(`#Copyright: (C) Copyright ${year} Plady`);
     lines.push(`TITLE "${cleanTitle}"`);
     lines.push(`#LUMIXPHOTOSTYLE STD`);
     lines.push(`#LUT size`);
@@ -698,17 +766,425 @@ function serializeCube(lut, sourceFilename, precision, clamp, ladyMeta) {
     if (r === 0) r = 0; if (g === 0) g = 0; if (b === 0) b = 0;
     out[i] = `${r.toFixed(precision)} ${g.toFixed(precision)} ${b.toFixed(precision)}`;
   }
-  // ladyMeta header has no trailing blank before data; non-ladyMeta does (already appended above)
+  // STD header has no trailing blank before data; non-STD does (already appended above)
   return lines.join('\n') + '\n' + out.join('\n') + '\n';
+}
+
+/* ============ XMP LOOK EXPORT ============ */
+function xmpIndex(size, r, g, b) {
+  return (r * size * size + g * size + b) * 3;
+}
+
+function cubeToXmpOrder(lut) {
+  const out = new Float64Array(lut.size ** 3 * 3);
+  for (let b = 0; b < lut.size; b++) {
+    for (let g = 0; g < lut.size; g++) {
+      for (let r = 0; r < lut.size; r++) {
+        const src = ((b * lut.size + g) * lut.size + r) * 3;
+        const dst = xmpIndex(lut.size, r, g, b);
+        out[dst] = lut.data[src];
+        out[dst + 1] = lut.data[src + 1];
+        out[dst + 2] = lut.data[src + 2];
+      }
+    }
+  }
+  return { ...lut, data: out };
+}
+
+function getXmpSample(lut, r, g, b) {
+  const s = lut.size;
+  r = Math.max(0, Math.min(s - 1, r));
+  g = Math.max(0, Math.min(s - 1, g));
+  b = Math.max(0, Math.min(s - 1, b));
+  const idx = xmpIndex(s, r, g, b);
+  return [lut.data[idx], lut.data[idx + 1], lut.data[idx + 2]];
+}
+
+function sampleTetrahedral(lut, rf, gf, bf) {
+  const lr = Math.max(0, Math.min(lut.size - 1, Math.floor(rf)));
+  const lg = Math.max(0, Math.min(lut.size - 1, Math.floor(gf)));
+  const lb = Math.max(0, Math.min(lut.size - 1, Math.floor(bf)));
+  const ur = Math.max(0, Math.min(lut.size - 1, lr + 1));
+  const ug = Math.max(0, Math.min(lut.size - 1, lg + 1));
+  const ub = Math.max(0, Math.min(lut.size - 1, lb + 1));
+  const fr = rf - lr;
+  const fg = gf - lg;
+  const fb = bf - lb;
+
+  const c000 = getXmpSample(lut, lr, lg, lb);
+  const c100 = getXmpSample(lut, ur, lg, lb);
+  const c010 = getXmpSample(lut, lr, ug, lb);
+  const c001 = getXmpSample(lut, lr, lg, ub);
+  const c110 = getXmpSample(lut, ur, ug, lb);
+  const c101 = getXmpSample(lut, ur, lg, ub);
+  const c011 = getXmpSample(lut, lr, ug, ub);
+  const c111 = getXmpSample(lut, ur, ug, ub);
+  const out = [0, 0, 0];
+
+  for (let ch = 0; ch < 3; ch++) {
+    if (fg >= fb && fb >= fr) {
+      out[ch] = (1 - fg) * c000[ch] + (fg - fb) * c010[ch] + (fb - fr) * c011[ch] + fr * c111[ch];
+    } else if (fb > fr && fr > fg) {
+      out[ch] = (1 - fb) * c000[ch] + (fb - fr) * c001[ch] + (fr - fg) * c101[ch] + fg * c111[ch];
+    } else if (fb > fg && fg >= fr) {
+      out[ch] = (1 - fb) * c000[ch] + (fb - fg) * c001[ch] + (fg - fr) * c011[ch] + fr * c111[ch];
+    } else if (fr >= fg && fg > fb) {
+      out[ch] = (1 - fr) * c000[ch] + (fr - fg) * c100[ch] + (fg - fb) * c110[ch] + fb * c111[ch];
+    } else if (fg > fr && fr >= fb) {
+      out[ch] = (1 - fg) * c000[ch] + (fg - fr) * c010[ch] + (fr - fb) * c110[ch] + fb * c111[ch];
+    } else {
+      out[ch] = (1 - fr) * c000[ch] + (fr - fb) * c100[ch] + (fb - fg) * c101[ch] + fg * c111[ch];
+    }
+  }
+
+  return out;
+}
+
+function resampleForXmp(lut, targetSize) {
+  const dmin = lut.domainMin || [0, 0, 0];
+  const dmax = lut.domainMax || [1, 1, 1];
+  const isDefaultDomain = dmin[0] === 0 && dmin[1] === 0 && dmin[2] === 0 &&
+    dmax[0] === 1 && dmax[1] === 1 && dmax[2] === 1;
+
+  if (lut.size === targetSize && isDefaultDomain) {
+    return lut.data;
+  }
+
+  const out = new Float64Array(targetSize ** 3 * 3);
+  const mapDomain = (v, ch) => {
+    const min = Number(dmin[ch]);
+    const max = Number(dmax[ch]);
+    if (!Number.isFinite(min) || !Number.isFinite(max) || max === min) return v;
+    return Math.min(1, Math.max(0, (v - min) / (max - min)));
+  };
+
+  for (let r = 0; r < targetSize; r++) {
+    for (let g = 0; g < targetSize; g++) {
+      for (let b = 0; b < targetSize; b++) {
+        const rf = mapDomain(r / (targetSize - 1), 0) * (lut.size - 1);
+        const gf = mapDomain(g / (targetSize - 1), 1) * (lut.size - 1);
+        const bf = mapDomain(b / (targetSize - 1), 2) * (lut.size - 1);
+        const sample = sampleTetrahedral(lut, rf, gf, bf);
+        const idx = xmpIndex(targetSize, r, g, b);
+        out[idx] = sample[0];
+        out[idx + 1] = sample[1];
+        out[idx + 2] = sample[2];
+      }
+    }
+  }
+  return out;
+}
+
+function roundToUint16(value) {
+  return Math.round(Math.min(1, Math.max(0, value)) * 65535);
+}
+
+function buildXmpPayload(lutData, size, options) {
+  const payload = new ArrayBuffer(16 + size ** 3 * 3 * 2 + 28);
+  const view = new DataView(payload);
+  view.setUint32(0, 1, true);
+  view.setUint32(4, 1, true);
+  view.setUint32(8, 3, true);
+  view.setUint32(12, size, true);
+
+  const identity = new Uint16Array(size);
+  for (let i = 0; i < size; i++) {
+    identity[i] = Math.floor((i * 65535 + Math.floor(size / 2)) / (size - 1));
+  }
+
+  let offset = 16;
+  for (let r = 0; r < size; r++) {
+    for (let g = 0; g < size; g++) {
+      for (let b = 0; b < size; b++) {
+        const src = xmpIndex(size, r, g, b);
+        view.setUint16(offset, (roundToUint16(lutData[src]) - identity[r]) & 0xffff, true);
+        view.setUint16(offset + 2, (roundToUint16(lutData[src + 1]) - identity[g]) & 0xffff, true);
+        view.setUint16(offset + 4, (roundToUint16(lutData[src + 2]) - identity[b]) & 0xffff, true);
+        offset += 6;
+      }
+    }
+  }
+
+  const primary = XMP_PRIMARY_MAP[options.primaries] || XMP_PRIMARY_MAP.sRGB;
+  view.setUint32(offset, primary.colors, true);
+  view.setUint32(offset + 4, primary.gamma, true);
+  view.setUint32(offset + 8, options.gamut === 'extend' ? 1 : 0, true);
+  view.setFloat64(offset + 12, options.rangeMin / 100, true);
+  view.setFloat64(offset + 20, options.rangeMax / 100, true);
+  return new Uint8Array(payload);
+}
+
+function encodeBase85(bytes) {
+  const paddedLength = Math.ceil(bytes.length / 4) * 4;
+  const padded = new Uint8Array(paddedLength);
+  padded.set(bytes);
+  let out = '';
+  let remaining = bytes.length;
+
+  for (let offset = 0; offset < paddedLength && remaining > 0; offset += 4) {
+    let value = padded[offset] |
+      (padded[offset + 1] << 8) |
+      (padded[offset + 2] << 16) |
+      (padded[offset + 3] << 24);
+    value >>>= 0;
+    for (let step = 0; step < 5; step++) {
+      out += XMP_ENCODE_TABLE[value % 85];
+      value = Math.floor(value / 85);
+      if (step > 0) {
+        remaining--;
+        if (remaining === 0) break;
+      }
+    }
+  }
+
+  return out;
+}
+
+function md5cycle(state, block) {
+  let [a, b, c, d] = state;
+  const ff = (a0, b0, c0, d0, x, s, t) => cmn((b0 & c0) | (~b0 & d0), a0, b0, x, s, t);
+  const gg = (a0, b0, c0, d0, x, s, t) => cmn((b0 & d0) | (c0 & ~d0), a0, b0, x, s, t);
+  const hh = (a0, b0, c0, d0, x, s, t) => cmn(b0 ^ c0 ^ d0, a0, b0, x, s, t);
+  const ii = (a0, b0, c0, d0, x, s, t) => cmn(c0 ^ (b0 | ~d0), a0, b0, x, s, t);
+
+  a = ff(a, b, c, d, block[0], 7, -680876936); d = ff(d, a, b, c, block[1], 12, -389564586);
+  c = ff(c, d, a, b, block[2], 17, 606105819); b = ff(b, c, d, a, block[3], 22, -1044525330);
+  a = ff(a, b, c, d, block[4], 7, -176418897); d = ff(d, a, b, c, block[5], 12, 1200080426);
+  c = ff(c, d, a, b, block[6], 17, -1473231341); b = ff(b, c, d, a, block[7], 22, -45705983);
+  a = ff(a, b, c, d, block[8], 7, 1770035416); d = ff(d, a, b, c, block[9], 12, -1958414417);
+  c = ff(c, d, a, b, block[10], 17, -42063); b = ff(b, c, d, a, block[11], 22, -1990404162);
+  a = ff(a, b, c, d, block[12], 7, 1804603682); d = ff(d, a, b, c, block[13], 12, -40341101);
+  c = ff(c, d, a, b, block[14], 17, -1502002290); b = ff(b, c, d, a, block[15], 22, 1236535329);
+
+  a = gg(a, b, c, d, block[1], 5, -165796510); d = gg(d, a, b, c, block[6], 9, -1069501632);
+  c = gg(c, d, a, b, block[11], 14, 643717713); b = gg(b, c, d, a, block[0], 20, -373897302);
+  a = gg(a, b, c, d, block[5], 5, -701558691); d = gg(d, a, b, c, block[10], 9, 38016083);
+  c = gg(c, d, a, b, block[15], 14, -660478335); b = gg(b, c, d, a, block[4], 20, -405537848);
+  a = gg(a, b, c, d, block[9], 5, 568446438); d = gg(d, a, b, c, block[14], 9, -1019803690);
+  c = gg(c, d, a, b, block[3], 14, -187363961); b = gg(b, c, d, a, block[8], 20, 1163531501);
+  a = gg(a, b, c, d, block[13], 5, -1444681467); d = gg(d, a, b, c, block[2], 9, -51403784);
+  c = gg(c, d, a, b, block[7], 14, 1735328473); b = gg(b, c, d, a, block[12], 20, -1926607734);
+
+  a = hh(a, b, c, d, block[5], 4, -378558); d = hh(d, a, b, c, block[8], 11, -2022574463);
+  c = hh(c, d, a, b, block[11], 16, 1839030562); b = hh(b, c, d, a, block[14], 23, -35309556);
+  a = hh(a, b, c, d, block[1], 4, -1530992060); d = hh(d, a, b, c, block[4], 11, 1272893353);
+  c = hh(c, d, a, b, block[7], 16, -155497632); b = hh(b, c, d, a, block[10], 23, -1094730640);
+  a = hh(a, b, c, d, block[13], 4, 681279174); d = hh(d, a, b, c, block[0], 11, -358537222);
+  c = hh(c, d, a, b, block[3], 16, -722521979); b = hh(b, c, d, a, block[6], 23, 76029189);
+  a = hh(a, b, c, d, block[9], 4, -640364487); d = hh(d, a, b, c, block[12], 11, -421815835);
+  c = hh(c, d, a, b, block[15], 16, 530742520); b = hh(b, c, d, a, block[2], 23, -995338651);
+
+  a = ii(a, b, c, d, block[0], 6, -198630844); d = ii(d, a, b, c, block[7], 10, 1126891415);
+  c = ii(c, d, a, b, block[14], 15, -1416354905); b = ii(b, c, d, a, block[5], 21, -57434055);
+  a = ii(a, b, c, d, block[12], 6, 1700485571); d = ii(d, a, b, c, block[3], 10, -1894986606);
+  c = ii(c, d, a, b, block[10], 15, -1051523); b = ii(b, c, d, a, block[1], 21, -2054922799);
+  a = ii(a, b, c, d, block[8], 6, 1873313359); d = ii(d, a, b, c, block[15], 10, -30611744);
+  c = ii(c, d, a, b, block[6], 15, -1560198380); b = ii(b, c, d, a, block[13], 21, 1309151649);
+  a = ii(a, b, c, d, block[4], 6, -145523070); d = ii(d, a, b, c, block[11], 10, -1120210379);
+  c = ii(c, d, a, b, block[2], 15, 718787259); b = ii(b, c, d, a, block[9], 21, -343485551);
+
+  state[0] = add32(a, state[0]);
+  state[1] = add32(b, state[1]);
+  state[2] = add32(c, state[2]);
+  state[3] = add32(d, state[3]);
+}
+
+function cmn(q, a, b, x, s, t) {
+  a = add32(add32(a, q), add32(x, t));
+  return add32((a << s) | (a >>> (32 - s)), b);
+}
+
+function add32(a, b) {
+  return (a + b) & 0xffffffff;
+}
+
+function md5(bytes) {
+  const state = [1732584193, -271733879, -1732584194, 271733878];
+  const block = new Uint32Array(16);
+  let index;
+  for (index = 64; index <= bytes.length; index += 64) {
+    for (let i = 0; i < 16; i++) {
+      const offset = index - 64 + i * 4;
+      block[i] = bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24);
+    }
+    md5cycle(state, block);
+  }
+
+  const tail = new Uint8Array(64);
+  tail.set(bytes.subarray(index - 64));
+  tail[bytes.length % 64] = 0x80;
+  if (bytes.length % 64 > 55) {
+    for (let i = 0; i < 16; i++) block[i] = tail[i * 4] | (tail[i * 4 + 1] << 8) | (tail[i * 4 + 2] << 16) | (tail[i * 4 + 3] << 24);
+    md5cycle(state, block);
+    tail.fill(0);
+  }
+
+  const bitLength = bytes.length * 8;
+  tail[56] = bitLength & 0xff;
+  tail[57] = (bitLength >>> 8) & 0xff;
+  tail[58] = (bitLength >>> 16) & 0xff;
+  tail[59] = (bitLength >>> 24) & 0xff;
+  for (let i = 0; i < 16; i++) block[i] = tail[i * 4] | (tail[i * 4 + 1] << 8) | (tail[i * 4 + 2] << 16) | (tail[i * 4 + 3] << 24);
+  md5cycle(state, block);
+
+  const out = new Uint8Array(16);
+  for (let i = 0; i < 4; i++) {
+    out[i * 4] = state[i] & 0xff;
+    out[i * 4 + 1] = (state[i] >>> 8) & 0xff;
+    out[i * 4 + 2] = (state[i] >>> 16) & 0xff;
+    out[i * 4 + 3] = (state[i] >>> 24) & 0xff;
+  }
+  return Array.from(out, value => value.toString(16).padStart(2, '0')).join('');
+}
+
+async function deflateBytes(bytes) {
+  if (typeof CompressionStream === 'undefined') {
+    throw new Error('当前浏览器不支持 XMP 压缩，请使用 Chrome 或 Edge');
+  }
+  const stream = new CompressionStream('deflate');
+  const writer = stream.writable.getWriter();
+  writer.write(bytes);
+  writer.close();
+  return new Uint8Array(await new Response(stream.readable).arrayBuffer());
+}
+
+function isZlibStream(bytes) {
+  if (bytes.length < 2) return false;
+  const cmf = bytes[0];
+  const flg = bytes[1];
+  return (cmf & 0x0f) === 8 && ((cmf << 8) + flg) % 31 === 0;
+}
+
+function adler32(bytes) {
+  let a = 1;
+  let b = 0;
+  for (let i = 0; i < bytes.length; i++) {
+    a = (a + bytes[i]) % 65521;
+    b = (b + a) % 65521;
+  }
+  return (b << 16) | a;
+}
+
+function ensureZlibStream(deflated, original) {
+  if (isZlibStream(deflated)) return deflated;
+  const checksum = adler32(original);
+  const out = new Uint8Array(deflated.length + 6);
+  out[0] = 0x78;
+  out[1] = 0x9c;
+  out.set(deflated, 2);
+  out[out.length - 4] = (checksum >>> 24) & 0xff;
+  out[out.length - 3] = (checksum >>> 16) & 0xff;
+  out[out.length - 2] = (checksum >>> 8) & 0xff;
+  out[out.length - 1] = checksum & 0xff;
+  return out;
+}
+
+function escapeXml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&apos;');
+}
+
+function utf8Bytes(value) {
+  return new TextEncoder().encode(value);
+}
+
+function buildXmpXml({ title, group, uuid, md5Hash, encodedTable, options }) {
+  const safeName = escapeXml(title);
+  const safeGroup = group ? `>${escapeXml(group)}</rdf:li>` : '/>';
+  const amountAttribute = options.amount !== 100 ? `\n   crs:RGBTableAmount="${options.amount / 100}"` : '';
+  const toneMapAttribute = options.toneMapStrength === 'medium'
+    ? '   crs:ToneMapStrength="1"\n'
+    : options.toneMapStrength === 'high'
+      ? '   crs:ToneMapStrength="2"\n'
+      : '';
+
+  return `<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0-c000 1.000000, 0000/00/00-00:00:00        ">
+ <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description rdf:about=""
+    xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/"
+   crs:PresetType="Look"
+   crs:Cluster=""
+   crs:UUID="${uuid}"
+   crs:SupportsAmount="True"
+   crs:SupportsColor="True"
+   crs:SupportsMonochrome="True"
+   crs:SupportsHighDynamicRange="True"
+   crs:SupportsNormalDynamicRange="True"
+   crs:SupportsSceneReferred="True"
+   crs:SupportsOutputReferred="True"
+   crs:RequiresRGBTables="False"
+   crs:CameraModelRestriction=""
+   crs:Copyright=""
+   crs:ContactInfo=""
+   crs:Version="14.3"
+   crs:ProcessVersion="11.0"
+${toneMapAttribute}   crs:ConvertToGrayscale="False"
+   crs:RGBTable="${md5Hash}"${amountAttribute}
+   crs:Table_${md5Hash}="${encodedTable}"
+   crs:HasSettings="True">
+   <crs:Name>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default">${safeName}</rdf:li>
+    </rdf:Alt>
+   </crs:Name>
+   <crs:ShortName>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default"/>
+    </rdf:Alt>
+   </crs:ShortName>
+   <crs:SortName>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default"/>
+    </rdf:Alt>
+   </crs:SortName>
+   <crs:Group>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default"${safeGroup}
+    </rdf:Alt>
+   </crs:Group>
+   <crs:Description>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default"/>
+    </rdf:Alt>
+   </crs:Description>
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>
+`;
+}
+
+async function buildXmpLook(sourceLut, sourceFilename) {
+  const lut = cubeToXmpOrder(sourceLut);
+  const targetSize = Math.min(lut.size, XMP_CONFIG.targetSize);
+  const options = { ...XMP_CONFIG, targetSize };
+  const title = lut.title || sourceFilename.replace(/\.cube$/i, '');
+  const lutData = resampleForXmp(lut, targetSize);
+  const payload = buildXmpPayload(lutData, targetSize, options);
+  const md5Hash = md5(payload);
+  const uuid = md5(utf8Bytes(`${md5Hash}${Date.now()}${sourceFilename}`));
+  const compressed = ensureZlibStream(await deflateBytes(payload), payload);
+  const packed = new Uint8Array(4 + compressed.length);
+  new DataView(packed.buffer).setUint32(0, payload.length, true);
+  packed.set(compressed, 4);
+  const encodedTable = encodeBase85(packed);
+  return {
+    text: buildXmpXml({ title, group: options.group, uuid, md5Hash, encodedTable, options }),
+    size: targetSize,
+    title
+  };
 }
 
 /* ============ APP ============ */
 const $ = (id) => document.getElementById(id);
+const heroTitle = $('heroTitle');
+const heroSub = $('heroSub');
 const pickBtn = $('pickBtn');
 const fileInput = $('fileInput');
-const destBlock = $('destBlock');
-const destValue = $('destValue');
-const destChange = $('destChange');
+const convertButton = $('convertButton');
 const statusArea = $('statusArea');
 const summary = $('summary');
 const toast = $('toast');
@@ -716,22 +1192,109 @@ const iosNote = $('iosNote');
 const footerStats = $('footerStats');
 const VERSION = 'v1.3';
 const ladyMetaToggle = $('ladyMetaToggle');
+const cubeMetaOption = $('cubeMetaOption');
+const copyrightToggle = $('copyrightToggle');
+const copyrightOption = $('copyrightOption');
+const timestampToggle = $('timestampToggle');
+const cubeOutputToggle = $('cubeOutputToggle');
+const xmpOutputToggle = $('xmpOutputToggle');
+
+function getOutputModes() {
+  const modes = [];
+  if (cubeOutputToggle.checked) modes.push('cube33');
+  if (xmpOutputToggle.checked) modes.push('xmp');
+  return modes;
+}
+
+function getModeLabel() {
+  const modes = getOutputModes();
+  if (modes.length === 2) return '33³ CUBE + Adobe XMP';
+  if (modes[0] === 'xmp') return 'Adobe XMP';
+  if (modes[0] === 'cube33') return '33³ CUBE';
+  return '未选择输出';
+}
+
+function syncModeCopy() {
+  const modes = getOutputModes();
+  if (modes.length === 2) {
+    heroTitle.innerHTML = '→ <em>33³ + XMP</em>';
+    heroSub.textContent = '选文件，勾选输出格式，点击转换后再点 ↓ 保存。';
+    footerStats.textContent = `${VERSION} · ready · CUBE + XMP`;
+    cubeMetaOption.classList.remove('is-hidden');
+    copyrightOption.classList.remove('is-hidden');
+  } else if (modes[0] === 'xmp') {
+    heroTitle.innerHTML = '→ <em>XMP</em>';
+    heroSub.textContent = '选文件，点击转换成 Adobe/Lightroom 可用的 XMP Look。';
+    footerStats.textContent = `${VERSION} · ready · Adobe XMP`;
+    cubeMetaOption.classList.add('is-hidden');
+    copyrightOption.classList.add('is-hidden');
+  } else if (modes[0] === 'cube33') {
+    heroTitle.innerHTML = '→ <em>33³</em>';
+    heroSub.textContent = '选文件，点击转换到 33×33×33。';
+    footerStats.textContent = `${VERSION} · ready · 33³ CUBE`;
+    cubeMetaOption.classList.remove('is-hidden');
+    copyrightOption.classList.remove('is-hidden');
+  } else {
+    heroTitle.innerHTML = '→ <em>选择输出</em>';
+    heroSub.textContent = '至少勾选一种输出格式后再转换。';
+    footerStats.textContent = `${VERSION} · ready`;
+    cubeMetaOption.classList.add('is-hidden');
+    copyrightOption.classList.add('is-hidden');
+  }
+  convertButton.disabled = !selectedFiles.length || modes.length === 0;
+  convertButton.textContent = modes.length === 2
+    ? '转换 CUBE + XMP'
+    : modes[0] === 'xmp'
+      ? '转换 XMP'
+      : modes[0] === 'cube33'
+        ? '转换 CUBE'
+        : '选择输出格式';
+  updateReadyRows();
+}
 
 // Restore toggle state from localStorage (persists across visits)
 try {
   ladyMetaToggle.checked = localStorage.getItem('ladyMeta') === '1';
+  copyrightToggle.checked = localStorage.getItem('pladyCopyright') === '1';
+  timestampToggle.checked = localStorage.getItem('timestampSuffix') === '1';
+  const savedOutputs = JSON.parse(localStorage.getItem('outputModes') || 'null');
+  if (savedOutputs && typeof savedOutputs === 'object') {
+    cubeOutputToggle.checked = savedOutputs.cube33 !== false;
+    xmpOutputToggle.checked = savedOutputs.xmp === true;
+  }
 } catch (e) { /* private mode etc. */ }
 ladyMetaToggle.addEventListener('change', () => {
   try { localStorage.setItem('ladyMeta', ladyMetaToggle.checked ? '1' : '0'); } catch (e) {}
 });
+copyrightToggle.addEventListener('change', () => {
+  try { localStorage.setItem('pladyCopyright', copyrightToggle.checked ? '1' : '0'); } catch (e) {}
+});
+timestampToggle.addEventListener('change', () => {
+  try { localStorage.setItem('timestampSuffix', timestampToggle.checked ? '1' : '0'); } catch (e) {}
+});
+function saveOutputModes() {
+  try {
+    localStorage.setItem('outputModes', JSON.stringify({
+      cube33: cubeOutputToggle.checked,
+      xmp: xmpOutputToggle.checked
+    }));
+  } catch (e) {}
+}
+[cubeOutputToggle, xmpOutputToggle].forEach(input => {
+  input.addEventListener('change', () => {
+    saveOutputModes();
+    syncModeCopy();
+  });
+});
 
 const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-const supportsFSA = 'showDirectoryPicker' in window;
 
-let outputDirHandle = null;
+let selectedFiles = [];
 let totalProcessed = 0;
 let pipelineId = 0;
+
+syncModeCopy();
 
 function showToast(msg, type = '', ms = 2400) {
   toast.textContent = msg;
@@ -740,38 +1303,6 @@ function showToast(msg, type = '', ms = 2400) {
   showToast._t = setTimeout(() => toast.classList.remove('show'), ms);
 }
 
-function refreshDestUI() {
-  destBlock.style.display = 'flex';
-  if (!supportsFSA) {
-    destValue.textContent = isiOS ? '「文件」App / Safari 下载' : '浏览器默认下载位置';
-    destChange.style.display = 'none';
-    return;
-  }
-  if (outputDirHandle) {
-    destValue.textContent = outputDirHandle.name + '/';
-    destChange.textContent = 'change';
-  } else {
-    destValue.textContent = '浏览器默认下载位置';
-    destChange.textContent = 'choose folder';
-  }
-}
-
-destChange.addEventListener('click', async () => {
-  if (!supportsFSA) return;
-  try {
-    const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-    outputDirHandle = handle;
-    refreshDestUI();
-    showToast(`已选择目录：${handle.name}`, 'success');
-  } catch (e) {
-    if (e.name !== 'AbortError') {
-      console.error(e);
-      showToast('选择目录失败', 'error');
-    }
-  }
-});
-
-refreshDestUI();
 if (isiOS) iosNote.classList.add('show');
 
 pickBtn.addEventListener('click', () => fileInput.click());
@@ -784,44 +1315,96 @@ pickBtn.addEventListener('click', () => fileInput.click());
 });
 pickBtn.addEventListener('drop', (e) => {
   const files = Array.from(e.dataTransfer.files);
-  if (files.length) startPipeline(files);
+  if (files.length) setSelectedFiles(files);
 });
 
 fileInput.addEventListener('change', (e) => {
   const files = Array.from(e.target.files || []);
   fileInput.value = '';
-  if (files.length) startPipeline(files);
+  if (files.length) setSelectedFiles(files);
 });
 
-async function startPipeline(files) {
-  const myRun = ++pipelineId;
+convertButton.addEventListener('click', () => {
+  if (selectedFiles.length) startPipeline(selectedFiles);
+});
+
+function setSelectedFiles(files) {
   const cubeFiles = files.filter(f => f.name.toLowerCase().endsWith('.cube'));
   const skipped = files.length - cubeFiles.length;
 
   if (skipped) showToast(`已跳过 ${skipped} 个非 .cube 文件`, 'error');
-  if (!cubeFiles.length) return;
-
-  statusArea.innerHTML = '';
+  selectedFiles = cubeFiles;
   summary.classList.remove('show');
+  statusArea.innerHTML = '';
 
-  const rows = cubeFiles.map((f) => {
+  if (!cubeFiles.length) {
+    convertButton.disabled = true;
+    return;
+  }
+
+  for (const file of cubeFiles) {
     const row = document.createElement('div');
     row.className = 'progress-row pending';
     row.innerHTML = `
       <div class="pname">
-        <strong>${f.name}</strong>
-        <div class="pmeta">queued</div>
+        <strong>${file.name}</strong>
+        <div class="pmeta">ready · ${getModeLabel()}</div>
+      </div>
+      <div class="pstatus">ready</div>
+    `;
+    statusArea.appendChild(row);
+  }
+
+  syncModeCopy();
+  showToast(`已选择 ${cubeFiles.length} 个 .cube`, 'success');
+}
+
+function updateReadyRows() {
+  const rows = statusArea.querySelectorAll('.progress-row.pending');
+  for (const row of rows) {
+    const meta = row.querySelector('.pmeta');
+    const badge = row.querySelector('.pstatus');
+    if (meta) meta.textContent = `待转换 · ${getModeLabel()}`;
+    if (badge) badge.textContent = '待转换';
+  }
+}
+
+async function startPipeline(files) {
+  const myRun = ++pipelineId;
+  const cubeFiles = files.filter(f => f.name.toLowerCase().endsWith('.cube'));
+  const outputModes = getOutputModes();
+  const modeLabel = getModeLabel();
+
+  if (!outputModes.length) {
+    showToast('请至少勾选一种输出格式', 'error');
+    syncModeCopy();
+    return;
+  }
+  if (!cubeFiles.length) return;
+
+  convertButton.disabled = true;
+  statusArea.innerHTML = '';
+  summary.classList.remove('show');
+
+  const jobs = cubeFiles.flatMap((file) => outputModes.map((mode) => ({ file, mode })));
+  const rows = jobs.map(({ file, mode }) => {
+    const row = document.createElement('div');
+    row.className = 'progress-row pending';
+    row.innerHTML = `
+      <div class="pname">
+        <strong>${file.name}</strong>
+        <div class="pmeta">queued · ${mode === 'xmp' ? 'Adobe XMP' : '33³ CUBE'}</div>
       </div>
       <div class="pstatus">queue</div>
     `;
     statusArea.appendChild(row);
-    return { file: f, row };
+    return { file, mode, row };
   });
 
   let done = 0, errors = 0;
   const results = [];
 
-  for (const { file, row } of rows) {
+  for (const { file, mode, row } of rows) {
     if (myRun !== pipelineId) return;
 
     row.className = 'progress-row processing';
@@ -830,15 +1413,32 @@ async function startPipeline(files) {
     meta.textContent = 'parsing & resampling…';
     await new Promise(r => setTimeout(r, 16));
 
-    let resultText, resultName, sourceSize;
+    let resultText, resultName, sourceSize, outputSize;
     try {
       const text = await file.text();
       const sourceLut = parseCube(text);
       sourceSize = sourceLut.size;
-      const resampled = resampleLUT(sourceLut, CONFIG.targetSize);
-      resultText = serializeCube(resampled, file.name, CONFIG.precision, CONFIG.clamp, ladyMetaToggle.checked);
       const base = file.name.replace(/\.cube$/i, '');
-      resultName = `${base}${makeSuffix()}.cube`;
+      const suffix = timestampToggle.checked ? makeSuffix() : '';
+      if (mode === 'xmp') {
+        meta.textContent = 'building Adobe XMP look…';
+        const xmp = await buildXmpLook(sourceLut, file.name);
+        resultText = xmp.text;
+        outputSize = xmp.size;
+        resultName = `${base}${suffix}.xmp`;
+      } else {
+        const resampled = resampleLUT(sourceLut, CONFIG.targetSize);
+        resultText = serializeCube(
+          resampled,
+          file.name,
+          CONFIG.precision,
+          CONFIG.clamp,
+          ladyMetaToggle.checked,
+          copyrightToggle.checked
+        );
+        outputSize = CONFIG.targetSize;
+        resultName = `${base}${suffix}.cube`;
+      }
     } catch (e) {
       console.error(e);
       row.className = 'progress-row error';
@@ -850,48 +1450,32 @@ async function startPipeline(files) {
     }
 
     const blob = new Blob([resultText], { type: 'application/octet-stream' });
-    let savedTo = null;
-
-    if (outputDirHandle) {
-      try {
-        const fileHandle = await outputDirHandle.getFileHandle(resultName, { create: true });
-        const writable = await fileHandle.createWritable();
-        await writable.write(blob);
-        await writable.close();
-        savedTo = `${outputDirHandle.name}/${resultName}`;
-      } catch (e) {
-        console.error('FSA write failed', e);
-      }
-    }
-
-    if (!savedTo) {
-      prepareDownloadLink(blob, resultName, row);
-      savedTo = resultName;
-    }
+    prepareDownloadLink(blob, resultName, row);
 
     row.className = 'progress-row done';
     row.querySelector('.pstatus').textContent = 'done';
+    row.querySelector('.pname strong').textContent = resultName;
     meta.className = 'pmeta';
-    meta.textContent = `${sourceSize}³ → ${CONFIG.targetSize}³ · ${resultName}`;
+    meta.textContent = mode === 'xmp'
+      ? `${file.name} · ${sourceSize}³ → XMP ${outputSize}³`
+      : `${file.name} · ${sourceSize}³ → ${outputSize}³`;
 
     results.push({ name: resultName, blob, text: resultText, row });
     done++;
     totalProcessed++;
-    footerStats.textContent = `${VERSION} · ${totalProcessed} processed`;
+    footerStats.textContent = `${VERSION} · ${totalProcessed} processed · ${modeLabel}`;
   }
 
+  convertButton.disabled = !selectedFiles.length || getOutputModes().length === 0;
+
   if (done > 0) {
-    let msg = `转换完成 · <strong>${done}</strong> 个`;
+    let msg = `${modeLabel} 转换完成 · <strong>${done}</strong> 个文件`;
     if (errors) msg += ` · ${errors} 失败`;
-    if (outputDirHandle) {
-      msg += ` · 已保存到 <strong>${outputDirHandle.name}/</strong>`;
-    } else {
-      msg += ` · 点 <strong>↓ 保存</strong> 下载`;
-    }
+    msg += ` · 点 <strong>↓ 保存</strong> 下载`;
     summary.innerHTML = msg;
     summary.classList.add('show');
 
-    if (!outputDirHandle && results.length > 1) {
+    if (results.length > 1) {
       offerZipDownload(results);
     }
   }
@@ -930,7 +1514,9 @@ async function offerZipDownload(results) {
     compressionOptions: { level: 6 }
   });
   const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const filename = `lut-33-${ts}.zip`;
+  const modes = getOutputModes();
+  const prefix = modes.length === 2 ? 'lut-33-xmp' : modes[0] === 'xmp' ? 'lut-xmp' : 'lut-33';
+  const filename = `${prefix}-${ts}.zip`;
   const url = URL.createObjectURL(blob);
 
   const zipRow = document.createElement('div');
@@ -939,7 +1525,7 @@ async function offerZipDownload(results) {
   zipRow.style.background = 'rgba(212, 255, 58, 0.06)';
   zipRow.innerHTML = `
     <div class="pname">
-      <strong>📦 一次下载所有</strong>
+      <strong>一次下载所有</strong>
       <div class="pmeta">${results.length} 个文件 · ${(blob.size/1024).toFixed(1)} KB · ZIP</div>
     </div>
     <a class="dl-link" href="${url}" download="${filename}">↓ ZIP</a>
