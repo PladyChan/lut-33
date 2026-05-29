@@ -332,6 +332,40 @@
     color: var(--accent);
   }
 
+  .xmp-profile-panel {
+    margin-top: 8px;
+    padding: 14px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .xmp-profile-panel.is-hidden { display: none; }
+  .xmp-profile-panel label {
+    display: grid;
+    gap: 6px;
+  }
+  .xmp-profile-panel span {
+    color: var(--text-faint);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .xmp-profile-panel select,
+  .xmp-profile-panel input {
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 10px;
+    border: 1px solid var(--line-bright);
+    border-radius: 3px;
+    background: var(--bg-card);
+    color: var(--text);
+    font: inherit;
+    font-size: 11px;
+  }
+
   .convert-btn {
     width: 100%;
     margin-top: 8px;
@@ -572,6 +606,41 @@
     </span>
   </label>
 
+  <div class="xmp-profile-panel is-hidden" id="xmpProfilePanel">
+    <label>
+      <span>厂商</span>
+      <select id="xmpMakerSelect"></select>
+    </label>
+    <label>
+      <span>机型</span>
+      <select id="xmpModelSelect"></select>
+    </label>
+    <label class="is-hidden" id="xmpCustomModelField">
+      <span>自定义机型名称</span>
+      <input id="xmpCustomModelInput" type="text" placeholder="例如 DC-S5M2" />
+    </label>
+    <label>
+      <span>基础 Profile</span>
+      <select id="xmpProfileSelect">
+        <option value="">不写入</option>
+        <option value="Adobe Color">Adobe Color</option>
+        <option value="Adobe Standard">Adobe Standard</option>
+        <option value="Camera Standard">Camera Standard</option>
+        <option value="Camera Neutral">Camera Neutral</option>
+        <option value="Camera Vivid">Camera Vivid</option>
+        <option value="Camera Portrait">Camera Portrait</option>
+        <option value="Camera Landscape">Camera Landscape</option>
+        <option value="Camera Natural">Camera Natural</option>
+        <option value="Camera Faithful">Camera Faithful</option>
+        <option value="custom">自定义...</option>
+      </select>
+    </label>
+    <label class="is-hidden" id="xmpCustomProfileField">
+      <span>自定义 Profile 名称</span>
+      <input id="xmpCustomProfileInput" type="text" placeholder="例如 Camera Standard" />
+    </label>
+  </div>
+
   <button class="convert-btn" id="convertButton" type="button" disabled>转换</button>
 
   <div class="status-area" id="statusArea"></div>
@@ -618,6 +687,21 @@ const XMP_PRIMARY_MAP = {
   P3: { colors: 3, gamma: 1 },
   Rec2020: { colors: 4, gamma: 4 }
 };
+
+const CAMERA_LIBRARY = [
+  { make: 'Panasonic', models: ['DC-S5M2', 'DC-S5M2X', 'DC-S5', 'DC-S1', 'DC-S1R', 'DC-S1H', 'DC-GH7', 'DC-GH6', 'DC-GH5M2', 'DC-G9M2', 'DC-G9'] },
+  { make: 'Sony', models: ['ILCE-1', 'ILCE-1M2', 'ILCE-7M4', 'ILCE-7RM5', 'ILCE-7SM3', 'ILCE-7CR', 'ILCE-7CM2', 'ILCE-9M3', 'ILCE-6700', 'ZV-E1'] },
+  { make: 'Canon', models: ['Canon EOS R5', 'Canon EOS R5 Mark II', 'Canon EOS R6', 'Canon EOS R6 Mark II', 'Canon EOS R3', 'Canon EOS R7', 'Canon EOS R8', 'Canon EOS R10', 'Canon EOS R50'] },
+  { make: 'Nikon', models: ['NIKON Z 9', 'NIKON Z 8', 'NIKON Z 7II', 'NIKON Z 6II', 'NIKON Z 6III', 'NIKON Z f', 'NIKON Z fc', 'NIKON Z 5', 'NIKON Z 50'] },
+  { make: 'Fujifilm', models: ['GFX100 II', 'GFX100S', 'GFX50S II', 'X-H2S', 'X-H2', 'X-T5', 'X-T4', 'X-S20', 'X100VI', 'X100V'] },
+  { make: 'Leica', models: ['LEICA SL3', 'LEICA SL2', 'LEICA SL2-S', 'LEICA Q3', 'LEICA Q2', 'LEICA M11', 'LEICA M10-R'] },
+  { make: 'OM System', models: ['OM-1', 'OM-1 Mark II', 'OM-5', 'E-M1MarkIII', 'E-M1X', 'E-M5MarkIII'] },
+  { make: 'Sigma', models: ['SIGMA fp', 'SIGMA fp L', 'SIGMA sd Quattro H'] },
+  { make: 'Hasselblad', models: ['Hasselblad X2D 100C', 'Hasselblad X1D II 50C', 'Hasselblad CFV 100C'] },
+  { make: 'Ricoh / Pentax', models: ['RICOH GR III', 'RICOH GR IIIx', 'PENTAX K-1 Mark II', 'PENTAX K-3 Mark III'] },
+  { make: 'DJI', models: ['FC8284', 'FC3582', 'FC3411', 'FC7303', 'DJI Mavic 3 Pro', 'DJI Air 3'] },
+  { make: 'Apple', models: ['iPhone 15 Pro', 'iPhone 15 Pro Max', 'iPhone 16 Pro', 'iPhone 16 Pro Max'] }
+];
 
 /* Suffix = "_MMDDHHmm" using local time, e.g. _05051324 */
 function makeSuffix() {
@@ -1096,6 +1180,9 @@ function buildXmpXml({ title, group, uuid, md5Hash, encodedTable, options }) {
   const safeName = escapeXml(title);
   const safeGroup = group ? `>${escapeXml(group)}</rdf:li>` : '/>';
   const amountAttribute = options.amount !== 100 ? `\n   crs:RGBTableAmount="${options.amount / 100}"` : '';
+  const makerAttribute = options.cameraMake ? `   crs:CameraMakeRestriction="${escapeXml(options.cameraMake)}"\n` : '';
+  const modelAttribute = options.cameraModel ? `   crs:CameraModelRestriction="${escapeXml(options.cameraModel)}"\n` : '   crs:CameraModelRestriction=""\n';
+  const profileAttribute = options.cameraProfile ? `   crs:CameraProfile="${escapeXml(options.cameraProfile)}"\n` : '';
   const toneMapAttribute = options.toneMapStrength === 'medium'
     ? '   crs:ToneMapStrength="1"\n'
     : options.toneMapStrength === 'high'
@@ -1117,7 +1204,7 @@ function buildXmpXml({ title, group, uuid, md5Hash, encodedTable, options }) {
    crs:SupportsSceneReferred="True"
    crs:SupportsOutputReferred="True"
    crs:RequiresRGBTables="False"
-   crs:CameraModelRestriction=""
+${makerAttribute}${modelAttribute}${profileAttribute}   crs:CameraProfileDigest=""
    crs:Copyright=""
    crs:ContactInfo=""
    crs:Version="14.3"
@@ -1160,7 +1247,7 @@ ${toneMapAttribute}   crs:ConvertToGrayscale="False"
 async function buildXmpLook(sourceLut, sourceFilename) {
   const lut = cubeToXmpOrder(sourceLut);
   const targetSize = Math.min(lut.size, XMP_CONFIG.targetSize);
-  const options = { ...XMP_CONFIG, targetSize };
+  const options = { ...XMP_CONFIG, targetSize, ...getXmpCameraOptions() };
   const title = sourceFilename.replace(/\.cube$/i, '');
   const lutData = resampleForXmp(lut, targetSize);
   const payload = buildXmpPayload(lutData, targetSize, options);
@@ -1198,6 +1285,14 @@ const copyrightOption = $('copyrightOption');
 const timestampToggle = $('timestampToggle');
 const cubeOutputToggle = $('cubeOutputToggle');
 const xmpOutputToggle = $('xmpOutputToggle');
+const xmpProfilePanel = $('xmpProfilePanel');
+const xmpMakerSelect = $('xmpMakerSelect');
+const xmpModelSelect = $('xmpModelSelect');
+const xmpCustomModelField = $('xmpCustomModelField');
+const xmpCustomModelInput = $('xmpCustomModelInput');
+const xmpProfileSelect = $('xmpProfileSelect');
+const xmpCustomProfileField = $('xmpCustomProfileField');
+const xmpCustomProfileInput = $('xmpCustomProfileInput');
 
 function getOutputModes() {
   const modes = [];
@@ -1222,24 +1317,28 @@ function syncModeCopy() {
     footerStats.textContent = `${VERSION} · ready · CUBE + XMP`;
     cubeMetaOption.classList.remove('is-hidden');
     copyrightOption.classList.remove('is-hidden');
+    xmpProfilePanel.classList.remove('is-hidden');
   } else if (modes[0] === 'xmp') {
     heroTitle.innerHTML = '→ <em>XMP</em>';
     heroSub.textContent = '选文件，点击转换成 Adobe/Lightroom 可用的 XMP Look。';
     footerStats.textContent = `${VERSION} · ready · Adobe XMP`;
     cubeMetaOption.classList.add('is-hidden');
     copyrightOption.classList.add('is-hidden');
+    xmpProfilePanel.classList.remove('is-hidden');
   } else if (modes[0] === 'cube33') {
     heroTitle.innerHTML = '→ <em>33³</em>';
     heroSub.textContent = '选文件，点击转换到 33×33×33。';
     footerStats.textContent = `${VERSION} · ready · 33³ CUBE`;
     cubeMetaOption.classList.remove('is-hidden');
     copyrightOption.classList.remove('is-hidden');
+    xmpProfilePanel.classList.add('is-hidden');
   } else {
     heroTitle.innerHTML = '→ <em>选择输出</em>';
     heroSub.textContent = '至少勾选一种输出格式后再转换。';
     footerStats.textContent = `${VERSION} · ready`;
     cubeMetaOption.classList.add('is-hidden');
     copyrightOption.classList.add('is-hidden');
+    xmpProfilePanel.classList.add('is-hidden');
   }
   convertButton.disabled = !selectedFiles.length || modes.length === 0;
   convertButton.textContent = modes.length === 2
@@ -1252,7 +1351,54 @@ function syncModeCopy() {
   updateReadyRows();
 }
 
+function populateCameraMakers() {
+  xmpMakerSelect.innerHTML = '<option value="">不写入厂商</option>' +
+    CAMERA_LIBRARY.map(item => `<option value="${escapeXml(item.make)}">${escapeXml(item.make)}</option>`).join('');
+}
+
+function populateCameraModels(make, selectedModel = '') {
+  const models = make ? CAMERA_LIBRARY.find(item => item.make === make)?.models || [] : [];
+  xmpModelSelect.innerHTML = '<option value="">不写入机型</option>' +
+    models.map(model => `<option value="${escapeXml(model)}">${escapeXml(model)}</option>`).join('') +
+    '<option value="custom">自定义...</option>';
+  xmpModelSelect.value = models.includes(selectedModel) ? selectedModel : selectedModel ? 'custom' : '';
+}
+
+function getXmpCameraOptions() {
+  const cameraMake = xmpMakerSelect.value;
+  const cameraModel = xmpModelSelect.value === 'custom' ? xmpCustomModelInput.value.trim() : xmpModelSelect.value;
+  const cameraProfile = xmpProfileSelect.value === 'custom'
+    ? xmpCustomProfileInput.value.trim()
+    : xmpProfileSelect.value;
+  return {
+    cameraMake,
+    cameraModel,
+    cameraProfile
+  };
+}
+
+function saveXmpCameraOptions() {
+  try {
+    localStorage.setItem('xmpCameraOptions', JSON.stringify({
+      make: xmpMakerSelect.value,
+      model: xmpModelSelect.value,
+      customModel: xmpCustomModelInput.value,
+      profile: xmpProfileSelect.value,
+      customProfile: xmpCustomProfileInput.value
+    }));
+  } catch (e) {}
+}
+
+function syncProfileCustomField() {
+  xmpCustomProfileField.classList.toggle('is-hidden', xmpProfileSelect.value !== 'custom');
+}
+
+function syncModelCustomField() {
+  xmpCustomModelField.classList.toggle('is-hidden', xmpModelSelect.value !== 'custom');
+}
+
 // Restore toggle state from localStorage (persists across visits)
+populateCameraMakers();
 try {
   ladyMetaToggle.checked = localStorage.getItem('ladyMeta') === '1';
   copyrightToggle.checked = localStorage.getItem('pladyCopyright') === '1';
@@ -1262,7 +1408,26 @@ try {
     cubeOutputToggle.checked = savedOutputs.cube33 !== false;
     xmpOutputToggle.checked = savedOutputs.xmp === true;
   }
+  const savedCameraOptions = JSON.parse(localStorage.getItem('xmpCameraOptions') || 'null');
+  if (savedCameraOptions && typeof savedCameraOptions === 'object') {
+    if (savedCameraOptions.make && CAMERA_LIBRARY.some(item => item.make === savedCameraOptions.make)) {
+      xmpMakerSelect.value = savedCameraOptions.make;
+    }
+    populateCameraModels(xmpMakerSelect.value, savedCameraOptions.model || '');
+    if (typeof savedCameraOptions.customModel === 'string') {
+      xmpCustomModelInput.value = savedCameraOptions.customModel;
+    }
+    if (savedCameraOptions.profile) xmpProfileSelect.value = savedCameraOptions.profile;
+    if (typeof savedCameraOptions.customProfile === 'string') {
+      xmpCustomProfileInput.value = savedCameraOptions.customProfile;
+    }
+  } else {
+    populateCameraModels('');
+  }
 } catch (e) { /* private mode etc. */ }
+populateCameraModels(xmpMakerSelect.value, xmpModelSelect.value);
+syncProfileCustomField();
+syncModelCustomField();
 ladyMetaToggle.addEventListener('change', () => {
   try { localStorage.setItem('ladyMeta', ladyMetaToggle.checked ? '1' : '0'); } catch (e) {}
 });
@@ -1272,6 +1437,21 @@ copyrightToggle.addEventListener('change', () => {
 timestampToggle.addEventListener('change', () => {
   try { localStorage.setItem('timestampSuffix', timestampToggle.checked ? '1' : '0'); } catch (e) {}
 });
+xmpMakerSelect.addEventListener('change', () => {
+  populateCameraModels(xmpMakerSelect.value);
+  syncModelCustomField();
+  saveXmpCameraOptions();
+});
+xmpModelSelect.addEventListener('change', () => {
+  syncModelCustomField();
+  saveXmpCameraOptions();
+});
+xmpCustomModelInput.addEventListener('input', saveXmpCameraOptions);
+xmpProfileSelect.addEventListener('change', () => {
+  syncProfileCustomField();
+  saveXmpCameraOptions();
+});
+xmpCustomProfileInput.addEventListener('input', saveXmpCameraOptions);
 function saveOutputModes() {
   try {
     localStorage.setItem('outputModes', JSON.stringify({
