@@ -1161,7 +1161,7 @@ async function buildXmpLook(sourceLut, sourceFilename) {
   const lut = cubeToXmpOrder(sourceLut);
   const targetSize = Math.min(lut.size, XMP_CONFIG.targetSize);
   const options = { ...XMP_CONFIG, targetSize };
-  const title = lut.title || sourceFilename.replace(/\.cube$/i, '');
+  const title = sourceFilename.replace(/\.cube$/i, '');
   const lutData = resampleForXmp(lut, targetSize);
   const payload = buildXmpPayload(lutData, targetSize, options);
   const md5Hash = md5(payload);
