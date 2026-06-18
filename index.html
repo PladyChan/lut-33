@@ -347,6 +347,20 @@
     display: grid;
     gap: 6px;
   }
+  .xmp-profile-panel .cube-option-row {
+    display: flex;
+    margin-top: 0;
+  }
+  .xmp-profile-panel .cube-option-row input {
+    width: 18px;
+    min-height: 18px;
+  }
+  .xmp-profile-panel .cube-option-row .cube-option-copy span {
+    color: var(--text-faint);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
   .xmp-profile-panel span {
     color: var(--text-faint);
     font-size: 10px;
@@ -364,6 +378,11 @@
     color: var(--text);
     font: inherit;
     font-size: 11px;
+  }
+  .xmp-profile-panel select:disabled,
+  .xmp-profile-panel input:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 
   .convert-btn {
@@ -611,6 +630,13 @@
       <span>厂商</span>
       <select id="xmpMakerSelect"></select>
     </label>
+    <label class="cube-option-row" for="xmpAllCamerasToggle" style="margin-top:0;">
+      <input type="checkbox" id="xmpAllCamerasToggle" />
+      <span class="cube-option-copy">
+        <strong>一键导出全部主流机型</strong>
+        <span>包含全部厂商 + 通用 Adobe</span>
+      </span>
+    </label>
     <label>
       <span>机型</span>
       <select id="xmpModelSelect"></select>
@@ -626,12 +652,16 @@
         <option value="Adobe Color">Adobe Color</option>
         <option value="Adobe Standard">Adobe Standard</option>
         <option value="Camera Standard">Camera Standard</option>
+        <option value="Camera ST">Camera ST</option>
+        <option value="Camera PROVIA/STANDARD">Camera PROVIA/STANDARD</option>
         <option value="Camera Neutral">Camera Neutral</option>
         <option value="Camera Vivid">Camera Vivid</option>
         <option value="Camera Portrait">Camera Portrait</option>
         <option value="Camera Landscape">Camera Landscape</option>
         <option value="Camera Natural">Camera Natural</option>
+        <option value="Camera Bright">Camera Bright</option>
         <option value="Camera Faithful">Camera Faithful</option>
+        <option value="Apple ProRaw">Apple ProRaw</option>
         <option value="custom">自定义...</option>
       </select>
     </label>
@@ -689,18 +719,19 @@ const XMP_PRIMARY_MAP = {
 };
 
 const CAMERA_LIBRARY = [
-  { make: 'Panasonic', models: ['DC-S5M2', 'DC-S5M2X', 'DC-S5', 'DC-S1', 'DC-S1R', 'DC-S1H', 'DC-GH7', 'DC-GH6', 'DC-GH5M2', 'DC-G9M2', 'DC-G9'] },
-  { make: 'Sony', models: ['ILCE-1', 'ILCE-1M2', 'ILCE-7M4', 'ILCE-7RM5', 'ILCE-7SM3', 'ILCE-7CR', 'ILCE-7CM2', 'ILCE-9M3', 'ILCE-6700', 'ZV-E1'] },
-  { make: 'Canon', models: ['Canon EOS R5', 'Canon EOS R5 Mark II', 'Canon EOS R6', 'Canon EOS R6 Mark II', 'Canon EOS R3', 'Canon EOS R7', 'Canon EOS R8', 'Canon EOS R10', 'Canon EOS R50'] },
-  { make: 'Nikon', models: ['NIKON Z 9', 'NIKON Z 8', 'NIKON Z 7II', 'NIKON Z 6II', 'NIKON Z 6III', 'NIKON Z f', 'NIKON Z fc', 'NIKON Z 5', 'NIKON Z 50'] },
-  { make: 'Fujifilm', models: ['GFX100 II', 'GFX100S', 'GFX50S II', 'X-H2S', 'X-H2', 'X-T5', 'X-T4', 'X-S20', 'X100VI', 'X100V'] },
-  { make: 'Leica', models: ['LEICA SL3', 'LEICA SL2', 'LEICA SL2-S', 'LEICA Q3', 'LEICA Q2', 'LEICA M11', 'LEICA M10-R'] },
-  { make: 'OM System', models: ['OM-1', 'OM-1 Mark II', 'OM-5', 'E-M1MarkIII', 'E-M1X', 'E-M5MarkIII'] },
-  { make: 'Sigma', models: ['SIGMA fp', 'SIGMA fp L', 'SIGMA sd Quattro H'] },
-  { make: 'Hasselblad', models: ['Hasselblad X2D 100C', 'Hasselblad X1D II 50C', 'Hasselblad CFV 100C'] },
-  { make: 'Ricoh / Pentax', models: ['RICOH GR III', 'RICOH GR IIIx', 'PENTAX K-1 Mark II', 'PENTAX K-3 Mark III'] },
-  { make: 'DJI', models: ['FC8284', 'FC3582', 'FC3411', 'FC7303', 'DJI Mavic 3 Pro', 'DJI Air 3'] },
-  { make: 'Apple', models: ['iPhone 15 Pro', 'iPhone 15 Pro Max', 'iPhone 16 Pro', 'iPhone 16 Pro Max'] }
+  { make: 'Panasonic', label: '松下', defaultProfile: 'Camera Standard', models: ['DC-S1', 'DC-S1R', 'DC-S1H', 'DC-S1M2', 'DC-S1M2E', 'DC-S1RM2', 'DC-S5', 'DC-S5M2', 'DC-S5M2X', 'DC-S9', 'DC-G9', 'DC-G9M2', 'DC-GH5', 'DC-GH5S', 'DC-GH5M2', 'DC-GH6', 'DC-GH7', 'DC-G100', 'DC-GX9'] },
+  { make: 'Sony', label: '索尼', profiles: ['Camera ST', 'Camera Standard'], models: ['ILCE-1', 'ILCE-1M2', 'ILCE-9', 'ILCE-9M2', 'ILCE-9M3', 'ILCE-7', 'ILCE-7M2', 'ILCE-7M3', 'ILCE-7M4', 'ILCE-7R', 'ILCE-7RM2', 'ILCE-7RM3', 'ILCE-7RM3A', 'ILCE-7RM4', 'ILCE-7RM4A', 'ILCE-7RM5', 'ILCE-7S', 'ILCE-7SM2', 'ILCE-7SM3', 'ILCE-7C', 'ILCE-7CM2', 'ILCE-7CR', 'ILCE-6100', 'ILCE-6400', 'ILCE-6600', 'ILCE-6700', 'ZV-E1', 'ZV-E10', 'ZV-E10M2'] },
+  { make: 'Canon', label: '佳能', defaultProfile: 'Camera Standard', models: ['Canon EOS R', 'Canon EOS RP', 'Canon EOS R1', 'Canon EOS R3', 'Canon EOS R5', 'Canon EOS R5 Mark II', 'Canon EOS R5 C', 'Canon EOS R6', 'Canon EOS R6 Mark II', 'Canon EOS R7', 'Canon EOS R8', 'Canon EOS R10', 'Canon EOS R50', 'Canon EOS R50 V', 'Canon EOS R100', 'Canon EOS M50 Mark II', 'Canon EOS M6 Mark II'] },
+  { make: 'Nikon', label: '尼康', defaultProfile: 'Camera Standard', models: ['NIKON Z 9', 'NIKON Z 8', 'NIKON Z 7', 'NIKON Z 7II', 'NIKON Z 6', 'NIKON Z 6II', 'NIKON Z 6III', 'NIKON Z 5', 'NIKON Z 5II', 'NIKON Z f', 'NIKON Z fc', 'NIKON Z 50', 'NIKON Z 50II', 'NIKON Z 30'] },
+  { make: 'Fujifilm', label: '富士', defaultProfile: 'Camera PROVIA/STANDARD', models: ['GFX100', 'GFX100 II', 'GFX100S', 'GFX100S II', 'GFX100RF', 'GFX50S II', 'X-H2S', 'X-H2', 'X-T5', 'X-T4', 'X-T3', 'X-T50', 'X-T30 II', 'X-S20', 'X-S10', 'X-M5', 'X-E5', 'X100VI', 'X100V'] },
+  { make: 'OM System', label: '奥之心-奥林巴斯', defaultProfile: 'Camera Natural', models: ['OM-1', 'OM-1 Mark II', 'OM-3', 'OM-5', 'E-M1MarkIII', 'E-M1X', 'E-M5MarkIII', 'E-M10MarkIV', 'PEN-F'] },
+  { make: 'Pentax', label: '宾得', defaultProfile: 'Camera Bright', models: ['PENTAX K-1', 'PENTAX K-1 Mark II', 'PENTAX K-3 Mark III', 'PENTAX K-3 Mark III Monochrome', 'PENTAX KP', 'PENTAX K-70', 'PENTAX KF'] },
+  { make: 'Leica', label: '徕卡', defaultProfile: 'Adobe Color', models: ['LEICA SL3', 'LEICA SL3-S', 'LEICA SL2', 'LEICA SL2-S', 'LEICA Q3', 'LEICA Q3 43', 'LEICA Q2', 'LEICA M11', 'LEICA M11-P', 'LEICA M11 Monochrom', 'LEICA M10-R', 'LEICA D-Lux 8'] },
+  { make: 'Ricoh', label: '理光', defaultProfile: 'Camera Standard', models: ['RICOH GR IV', 'RICOH GR III', 'RICOH GR III HDF', 'RICOH GR IIIx', 'RICOH GR IIIx HDF'] },
+  { make: 'Sigma', label: '适马', defaultProfile: 'Camera Standard', models: ['SIGMA BF', 'SIGMA fp', 'SIGMA fp L', 'SIGMA sd Quattro', 'SIGMA sd Quattro H'] },
+  { make: 'Hasselblad', label: '哈苏', defaultProfile: 'Adobe Color', models: ['Hasselblad X2D 100C', 'Hasselblad X1D II 50C', 'Hasselblad X1D 50C', 'Hasselblad CFV 100C', 'Hasselblad CFV II 50C', 'Hasselblad 907X 50C', 'Hasselblad 907X & CFV 100C'] },
+  { make: 'DJI', label: '大疆', defaultProfile: 'Adobe Color', models: ['DJI Mavic 4 Pro', 'DJI Mavic 3 Pro', 'DJI Mavic 3 Classic', 'DJI Air 3S', 'DJI Air 3', 'DJI Mini 4 Pro', 'DJI Mini 3 Pro', 'DJI Osmo Pocket 3', 'FC8284', 'FC3582', 'FC3411', 'FC7303'] },
+  { make: 'Apple', label: '苹果', defaultProfile: 'Apple ProRaw', models: ['iPhone 16 Pro', 'iPhone 16 Pro Max', 'iPhone 15 Pro', 'iPhone 15 Pro Max', 'iPhone 14 Pro', 'iPhone 14 Pro Max', 'iPhone 13 Pro', 'iPhone 13 Pro Max', 'iPhone 12 Pro', 'iPhone 12 Pro Max'] }
 ];
 
 /* Suffix = "_MMDDHHmm" using local time, e.g. _05051324 */
@@ -1244,25 +1275,156 @@ ${toneMapAttribute}   crs:ConvertToGrayscale="False"
 `;
 }
 
-async function buildXmpLook(sourceLut, sourceFilename) {
+async function prepareXmpLookBase(sourceLut) {
   const lut = cubeToXmpOrder(sourceLut);
   const targetSize = Math.min(lut.size, XMP_CONFIG.targetSize);
-  const options = { ...XMP_CONFIG, targetSize, ...getXmpCameraOptions() };
-  const title = sourceFilename.replace(/\.cube$/i, '');
+  const options = { ...XMP_CONFIG, targetSize };
   const lutData = resampleForXmp(lut, targetSize);
   const payload = buildXmpPayload(lutData, targetSize, options);
   const md5Hash = md5(payload);
-  const uuid = md5(utf8Bytes(`${md5Hash}${Date.now()}${sourceFilename}`));
   const compressed = ensureZlibStream(await deflateBytes(payload), payload);
   const packed = new Uint8Array(4 + compressed.length);
   new DataView(packed.buffer).setUint32(0, payload.length, true);
   packed.set(compressed, 4);
   const encodedTable = encodeBase85(packed);
+  return { targetSize, md5Hash, encodedTable };
+}
+
+function buildXmpLookFromPrepared(prepared, title, cameraOptions, uuidSeed) {
+  const options = { ...XMP_CONFIG, targetSize: prepared.targetSize, ...cameraOptions };
+  const uuid = md5(utf8Bytes(`${prepared.md5Hash}${uuidSeed}`));
   return {
-    text: buildXmpXml({ title, group: options.group, uuid, md5Hash, encodedTable, options }),
-    size: targetSize,
+    text: buildXmpXml({
+      title,
+      group: options.group,
+      uuid,
+      md5Hash: prepared.md5Hash,
+      encodedTable: prepared.encodedTable,
+      options
+    }),
+    size: prepared.targetSize,
     title
   };
+}
+
+async function buildXmpLook(sourceLut, sourceFilename, cameraOptions = getXmpCameraOptions(), titleOverride = '') {
+  const prepared = await prepareXmpLookBase(sourceLut);
+  const title = titleOverride || sourceFilename.replace(/\.cube$/i, '');
+  return buildXmpLookFromPrepared(prepared, title, cameraOptions, `${Date.now()}${sourceFilename}${title}`);
+}
+
+function sanitizePathSegment(value) {
+  return String(value)
+    .replace(/[\\/:*?"<>|]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim() || 'Unknown';
+}
+
+function sanitizeFilename(value) {
+  return sanitizePathSegment(value).replace(/\s+/g, '_');
+}
+
+async function buildAllCameraXmpLooks(sourceLut, sourceFilename, suffix = '') {
+  const prepared = await prepareXmpLookBase(sourceLut);
+  const base = sourceFilename.replace(/\.cube$/i, '');
+  const entries = [];
+  let index = 0;
+  const universalBrandFolder = '通用Adobe';
+  const universalProfile = 'Adobe Color';
+  const universalTitle = base;
+  const universalXmp = buildXmpLookFromPrepared(
+    prepared,
+    universalTitle,
+    {
+      cameraMake: '',
+      cameraModel: '',
+      cameraProfile: universalProfile,
+      group: XMP_CONFIG.group
+    },
+    `${Date.now()}${sourceFilename}UniversalAdobe${universalProfile}${index++}`
+  );
+  const universalFileBase = sanitizeFilename(base);
+  entries.push({
+    name: `${universalFileBase}.xmp`,
+    path: `${universalBrandFolder}/JPG/${universalFileBase}.xmp`,
+    text: universalXmp.text,
+    size: universalXmp.size,
+    brand: universalBrandFolder,
+    profile: universalProfile
+  });
+
+  for (const brand of CAMERA_LIBRARY) {
+    const brandFolder = sanitizePathSegment(brand.label || brand.make);
+    const profiles = brand.profiles || [brand.defaultProfile || 'Camera Standard'];
+    const rawProfiles = profiles.filter(profile => profile !== 'Adobe Color');
+    const fileBase = sanitizeFilename(base);
+    const jpgXmp = buildXmpLookFromPrepared(
+      prepared,
+      base,
+      {
+        cameraMake: brand.make,
+        cameraModel: '',
+        cameraProfile: 'Adobe Color',
+        group: XMP_CONFIG.group
+      },
+      `${Date.now()}${sourceFilename}${brand.make}AdobeColor${index++}`
+    );
+    entries.push({
+      name: `${fileBase}.xmp`,
+      path: `${brandFolder}/JPG/${fileBase}.xmp`,
+      text: jpgXmp.text,
+      size: jpgXmp.size,
+      brand: brandFolder,
+      profile: 'JPG'
+    });
+
+    if (rawProfiles.length) {
+      const rawModelList = (brand.models || []).join('、');
+      entries.push({
+        name: '说明.txt',
+        path: `${brandFolder}/说明.txt`,
+        text: [
+          `${brandFolder}`,
+          '',
+          `Raw：${rawProfiles.join('、')}`,
+          `支持 Raw 的机型：${rawModelList || '未列出'}`,
+          '未列出的其它机型请使用 JPG。',
+          '',
+          'JPG = Adobe Color fallback，不限制具体机型。',
+          'Raw = 厂商标准 Camera Matching Profile。'
+        ].join('\n'),
+        size: 0,
+        brand: brandFolder,
+        profile: '说明'
+      });
+    }
+
+    for (const exportProfile of rawProfiles) {
+      const profileFolder = sanitizePathSegment(exportProfile);
+      const rawFolder = rawProfiles.length > 1 ? `Raw/${profileFolder}` : 'Raw';
+      const xmp = buildXmpLookFromPrepared(
+        prepared,
+        base,
+        {
+          cameraMake: brand.make,
+          cameraModel: '',
+          cameraProfile: exportProfile,
+          group: XMP_CONFIG.group
+        },
+        `${Date.now()}${sourceFilename}${brand.make}${exportProfile}${index++}`
+      );
+      entries.push({
+        name: `${fileBase}.xmp`,
+        path: `${brandFolder}/${rawFolder}/${fileBase}.xmp`,
+        text: xmp.text,
+        size: xmp.size,
+        brand: brandFolder,
+        profile: 'Raw'
+      });
+    }
+  }
+
+  return { entries, size: prepared.targetSize };
 }
 
 /* ============ APP ============ */
@@ -1286,6 +1448,7 @@ const timestampToggle = $('timestampToggle');
 const cubeOutputToggle = $('cubeOutputToggle');
 const xmpOutputToggle = $('xmpOutputToggle');
 const xmpProfilePanel = $('xmpProfilePanel');
+const xmpAllCamerasToggle = $('xmpAllCamerasToggle');
 const xmpMakerSelect = $('xmpMakerSelect');
 const xmpModelSelect = $('xmpModelSelect');
 const xmpCustomModelField = $('xmpCustomModelField');
@@ -1303,8 +1466,9 @@ function getOutputModes() {
 
 function getModeLabel() {
   const modes = getOutputModes();
-  if (modes.length === 2) return '33³ CUBE + Adobe XMP';
-  if (modes[0] === 'xmp') return 'Adobe XMP';
+  const xmpLabel = xmpAllCamerasToggle.checked ? '全部厂商 XMP' : 'Adobe XMP';
+  if (modes.length === 2) return `33³ CUBE + ${xmpLabel}`;
+  if (modes[0] === 'xmp') return xmpLabel;
   if (modes[0] === 'cube33') return '33³ CUBE';
   return '未选择输出';
 }
@@ -1342,9 +1506,9 @@ function syncModeCopy() {
   }
   convertButton.disabled = !selectedFiles.length || modes.length === 0;
   convertButton.textContent = modes.length === 2
-    ? '转换 CUBE + XMP'
+    ? (xmpAllCamerasToggle.checked ? '转换 CUBE + 全部 XMP' : '转换 CUBE + XMP')
     : modes[0] === 'xmp'
-      ? '转换 XMP'
+      ? (xmpAllCamerasToggle.checked ? '导出全部 XMP' : '转换 XMP')
       : modes[0] === 'cube33'
         ? '转换 CUBE'
         : '选择输出格式';
@@ -1397,12 +1561,23 @@ function syncModelCustomField() {
   xmpCustomModelField.classList.toggle('is-hidden', xmpModelSelect.value !== 'custom');
 }
 
+function syncXmpAllCameraUi(refreshCopy = true) {
+  const disabled = xmpAllCamerasToggle.checked;
+  xmpMakerSelect.disabled = disabled;
+  xmpModelSelect.disabled = disabled;
+  xmpCustomModelInput.disabled = disabled;
+  xmpProfileSelect.disabled = disabled;
+  xmpCustomProfileInput.disabled = disabled;
+  if (refreshCopy) syncModeCopy();
+}
+
 // Restore toggle state from localStorage (persists across visits)
 populateCameraMakers();
 try {
   ladyMetaToggle.checked = localStorage.getItem('ladyMeta') === '1';
   copyrightToggle.checked = localStorage.getItem('pladyCopyright') === '1';
   timestampToggle.checked = localStorage.getItem('timestampSuffix') === '1';
+  xmpAllCamerasToggle.checked = localStorage.getItem('xmpAllCameras') === '1';
   const savedOutputs = JSON.parse(localStorage.getItem('outputModes') || 'null');
   if (savedOutputs && typeof savedOutputs === 'object') {
     cubeOutputToggle.checked = savedOutputs.cube33 !== false;
@@ -1428,6 +1603,7 @@ try {
 populateCameraModels(xmpMakerSelect.value, xmpModelSelect.value);
 syncProfileCustomField();
 syncModelCustomField();
+syncXmpAllCameraUi(false);
 ladyMetaToggle.addEventListener('change', () => {
   try { localStorage.setItem('ladyMeta', ladyMetaToggle.checked ? '1' : '0'); } catch (e) {}
 });
@@ -1452,6 +1628,10 @@ xmpProfileSelect.addEventListener('change', () => {
   saveXmpCameraOptions();
 });
 xmpCustomProfileInput.addEventListener('input', saveXmpCameraOptions);
+xmpAllCamerasToggle.addEventListener('change', () => {
+  try { localStorage.setItem('xmpAllCameras', xmpAllCamerasToggle.checked ? '1' : '0'); } catch (e) {}
+  syncXmpAllCameraUi();
+});
 function saveOutputModes() {
   try {
     localStorage.setItem('outputModes', JSON.stringify({
@@ -1566,14 +1746,17 @@ async function startPipeline(files) {
   statusArea.innerHTML = '';
   summary.classList.remove('show');
 
-  const jobs = cubeFiles.flatMap((file) => outputModes.map((mode) => ({ file, mode })));
+  const jobs = cubeFiles.flatMap((file) => outputModes.map((mode) => ({
+    file,
+    mode: mode === 'xmp' && xmpAllCamerasToggle.checked ? 'xmpAll' : mode
+  })));
   const rows = jobs.map(({ file, mode }) => {
     const row = document.createElement('div');
     row.className = 'progress-row pending';
     row.innerHTML = `
       <div class="pname">
         <strong>${file.name}</strong>
-        <div class="pmeta">queued · ${mode === 'xmp' ? 'Adobe XMP' : '33³ CUBE'}</div>
+        <div class="pmeta">queued · ${mode === 'xmpAll' ? '全部厂商 XMP' : mode === 'xmp' ? 'Adobe XMP' : '33³ CUBE'}</div>
       </div>
       <div class="pstatus">queue</div>
     `;
@@ -1593,22 +1776,27 @@ async function startPipeline(files) {
     meta.textContent = 'parsing & resampling…';
     await new Promise(r => setTimeout(r, 16));
 
-    let resultText, resultName, sourceSize, outputSize;
+    let sourceSize, outputSize;
+    let produced = [];
     try {
       const text = await file.text();
       const sourceLut = parseCube(text);
       sourceSize = sourceLut.size;
       const base = file.name.replace(/\.cube$/i, '');
       const suffix = timestampToggle.checked ? makeSuffix() : '';
-      if (mode === 'xmp') {
+      if (mode === 'xmpAll') {
+        meta.textContent = 'building all camera XMP looks…';
+        const batch = await buildAllCameraXmpLooks(sourceLut, file.name, suffix);
+        outputSize = batch.size;
+        produced = batch.entries;
+      } else if (mode === 'xmp') {
         meta.textContent = 'building Adobe XMP look…';
         const xmp = await buildXmpLook(sourceLut, file.name);
-        resultText = xmp.text;
         outputSize = xmp.size;
-        resultName = `${base}${suffix}.xmp`;
+        produced = [{ name: `${base}${suffix}.xmp`, text: xmp.text, size: xmp.size }];
       } else {
         const resampled = resampleLUT(sourceLut, CONFIG.targetSize);
-        resultText = serializeCube(
+        const resultText = serializeCube(
           resampled,
           file.name,
           CONFIG.precision,
@@ -1617,7 +1805,7 @@ async function startPipeline(files) {
           copyrightToggle.checked
         );
         outputSize = CONFIG.targetSize;
-        resultName = `${base}${suffix}.cube`;
+        produced = [{ name: `${base}${suffix}.cube`, text: resultText, size: outputSize }];
       }
     } catch (e) {
       console.error(e);
@@ -1629,20 +1817,29 @@ async function startPipeline(files) {
       continue;
     }
 
-    const blob = new Blob([resultText], { type: 'application/octet-stream' });
-    prepareDownloadLink(blob, resultName, row);
+    if (produced.length === 1) {
+      const blob = new Blob([produced[0].text], { type: 'application/octet-stream' });
+      prepareDownloadLink(blob, produced[0].name, row);
+      produced[0].blob = blob;
+    }
 
     row.className = 'progress-row done';
     row.querySelector('.pstatus').textContent = 'done';
-    row.querySelector('.pname strong').textContent = resultName;
+    row.querySelector('.pname strong').textContent = produced.length === 1
+      ? produced[0].name
+      : `${file.name.replace(/\.cube$/i, '')} · 全部厂商 XMP`;
     meta.className = 'pmeta';
-    meta.textContent = mode === 'xmp'
+    meta.textContent = mode === 'xmpAll'
+      ? `${file.name} · ${sourceSize}³ → XMP ${outputSize}³ · ${produced.length} 个机型`
+      : mode === 'xmp'
       ? `${file.name} · ${sourceSize}³ → XMP ${outputSize}³`
       : `${file.name} · ${sourceSize}³ → ${outputSize}³`;
 
-    results.push({ name: resultName, blob, text: resultText, row });
-    done++;
-    totalProcessed++;
+    for (const item of produced) {
+      results.push({ ...item, row });
+    }
+    done += produced.length;
+    totalProcessed += produced.length;
     footerStats.textContent = `${VERSION} · ${totalProcessed} processed · ${modeLabel}`;
   }
 
@@ -1687,7 +1884,9 @@ function prepareDownloadLink(blob, filename, row) {
 
 async function offerZipDownload(results) {
   const zip = new JSZip();
-  for (const r of results) zip.file(r.name, r.text);
+  for (const r of results) {
+    zip.file(r.path || r.name, r.text);
+  }
   const blob = await zip.generateAsync({
     type: 'blob',
     compression: 'DEFLATE',
@@ -1695,7 +1894,11 @@ async function offerZipDownload(results) {
   });
   const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const modes = getOutputModes();
-  const prefix = modes.length === 2 ? 'lut-33-xmp' : modes[0] === 'xmp' ? 'lut-xmp' : 'lut-33';
+  const prefix = modes.length === 2
+    ? (xmpAllCamerasToggle.checked ? 'lut-33-all-xmp' : 'lut-33-xmp')
+    : modes[0] === 'xmp'
+      ? (xmpAllCamerasToggle.checked ? 'lut-all-xmp' : 'lut-xmp')
+      : 'lut-33';
   const filename = `${prefix}-${ts}.zip`;
   const url = URL.createObjectURL(blob);
 
