@@ -96,12 +96,14 @@
   - Canon EOS R5 C
   - Canon EOS R7
   - Canon EOS R10
+  - Canon EOS R6 Mark II
   - Canon EOS R50
   - Canon EOS R8
   - Canon EOS R100
   - Canon EOS R1
   - Canon EOS R5 Mark II
   - Canon EOS R50 V
+  - Canon EOS R6 Mark III
 
 ## 尼康
 

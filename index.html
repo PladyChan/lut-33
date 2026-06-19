@@ -721,7 +721,7 @@ const XMP_PRIMARY_MAP = {
 const CAMERA_LIBRARY = [
   { make: 'Panasonic', label: '松下', defaultProfile: 'Camera Standard', models: ['DC-L10', 'DC-GH5', 'DC-G9', 'DC-GH5S', 'DC-GX9', 'DC-S1', 'DC-S1R', 'DC-S1H', 'DC-S5', 'DC-G100', 'DC-GH5M2', 'DC-GH6', 'DC-S5M2', 'DC-S5M2X', 'DC-G9M2', 'DC-S9', 'DC-GH7', 'DC-S1RM2', 'DC-S1M2', 'DC-S1M2E'] },
   { make: 'Sony', label: '索尼', profiles: ['Camera ST', 'Camera Standard'], models: ['ILCE-7', 'ILCE-7R', 'ILCE-7S', 'ILCE-7M2', 'ILCE-7RM2', 'ILCE-7SM2', 'ILCE-9', 'ILCE-7RM3', 'ILCE-7M3', 'ILCE-6400', 'ILCE-7RM4', 'ILCE-6100', 'ILCE-6600', 'ILCE-9M2', 'ILCE-7SM3', 'ILCE-7C', 'ILCE-7RM3A', 'ILCE-7RM4A', 'ILCE-1', 'ZV-E10', 'ILCE-7M4', 'ILCE-7RM5', 'ZV-E1', 'ILCE-6700', 'ILCE-7CM2', 'ILCE-7CR', 'ILCE-9M3', 'ZV-E10M2', 'ILCE-1M2', 'ILCE-7RM6'] },
-  { make: 'Canon', label: '佳能', defaultProfile: 'Camera Standard', models: ['Canon EOS R', 'Canon EOS RP', 'Canon EOS M6 Mark II', 'Canon EOS M50 Mark II', 'Canon EOS R5', 'Canon EOS R6', 'Canon EOS R3', 'Canon EOS R5 C', 'Canon EOS R7', 'Canon EOS R10', 'Canon EOS R50', 'Canon EOS R8', 'Canon EOS R100', 'Canon EOS R1', 'Canon EOS R5 Mark II', 'Canon EOS R50 V'] },
+  { make: 'Canon', label: '佳能', defaultProfile: 'Camera Standard', models: ['Canon EOS R', 'Canon EOS RP', 'Canon EOS M6 Mark II', 'Canon EOS M50 Mark II', 'Canon EOS R5', 'Canon EOS R6', 'Canon EOS R3', 'Canon EOS R5 C', 'Canon EOS R7', 'Canon EOS R10', 'Canon EOS R6 Mark II', 'Canon EOS R50', 'Canon EOS R8', 'Canon EOS R100', 'Canon EOS R1', 'Canon EOS R5 Mark II', 'Canon EOS R50 V', 'Canon EOS R6 Mark III'] },
   { make: 'Nikon', label: '尼康', defaultProfile: 'Camera Standard', models: ['NIKON Z 7', 'NIKON Z 6', 'NIKON Z 50', 'NIKON Z 5', 'NIKON Z 6II', 'NIKON Z 7II', 'NIKON Z fc', 'NIKON Z 9', 'NIKON Z 30', 'NIKON Z 8', 'NIKON Z f', 'NIKON Z 6III', 'NIKON Z 50II', 'NIKON Z 5II'] },
   { make: 'Fujifilm', label: '富士', defaultProfile: 'Camera PROVIA/STANDARD', models: ['X-T3', 'GFX100', 'X100V', 'X-T4', 'X-S10', 'GFX100S', 'X-T30 II', 'GFX50S II', 'X-H2S', 'X-H2', 'X-T5', 'X-S20', 'GFX100 II', 'X100VI', 'GFX100S II', 'X-T50', 'X-M5', 'GFX100RF', 'X-E5'] },
   { make: 'OM System', label: '奥之心-奥林巴斯', defaultProfile: 'Camera Natural', models: ['PEN-F', 'E-M1X', 'E-M5MarkIII', 'E-M1MarkIII', 'E-M10MarkIV', 'OM-1', 'OM-5', 'OM-1 Mark II', 'OM-3'] },
@@ -739,6 +739,12 @@ function makeSuffix() {
   const d = new Date();
   const pad = (n) => String(n).padStart(2, '0');
   return `_${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}`;
+}
+
+function makeZipTimestamp() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}`;
 }
 
 /* ============ CUBE PARSER ============ */
@@ -1349,6 +1355,7 @@ async function buildAllCameraXmpLooks(sourceLut, sourceFilename, suffix = '') {
     path: universalBrandFolder + '/JPG/' + universalFileBase + '.xmp',
     text: universalXmp.text,
     size: universalXmp.size,
+    kind: 'xmp',
     brand: universalBrandFolder,
     profile: universalProfile
   });
@@ -1374,6 +1381,7 @@ async function buildAllCameraXmpLooks(sourceLut, sourceFilename, suffix = '') {
       path: brandFolder + '/JPG/' + fileBase + '.xmp',
       text: jpgXmp.text,
       size: jpgXmp.size,
+      kind: 'xmp',
       brand: brandFolder,
       profile: 'JPG'
     });
@@ -1394,6 +1402,7 @@ async function buildAllCameraXmpLooks(sourceLut, sourceFilename, suffix = '') {
           '如果是支持机型之前的机型，请使用 JPG 通用。'
         ].join('\n'),
         size: 0,
+        kind: 'xmp',
         brand: brandFolder,
         profile: '说明'
       });
@@ -1418,6 +1427,7 @@ async function buildAllCameraXmpLooks(sourceLut, sourceFilename, suffix = '') {
         path: brandFolder + '/' + rawFolder + '/' + fileBase + '.xmp',
         text: xmp.text,
         size: xmp.size,
+        kind: 'xmp',
         brand: brandFolder,
         profile: 'Raw'
       });
@@ -1793,7 +1803,7 @@ async function startPipeline(files) {
         meta.textContent = 'building Adobe XMP look…';
         const xmp = await buildXmpLook(sourceLut, file.name);
         outputSize = xmp.size;
-        produced = [{ name: `${base}${suffix}.xmp`, text: xmp.text, size: xmp.size }];
+        produced = [{ name: `${base}${suffix}.xmp`, text: xmp.text, size: xmp.size, kind: 'xmp' }];
       } else {
         const resampled = resampleLUT(sourceLut, CONFIG.targetSize);
         const resultText = serializeCube(
@@ -1805,7 +1815,7 @@ async function startPipeline(files) {
           copyrightToggle.checked
         );
         outputSize = CONFIG.targetSize;
-        produced = [{ name: `${base}${suffix}.cube`, text: resultText, size: outputSize }];
+        produced = [{ name: `${base}${suffix}.cube`, text: resultText, size: outputSize, kind: 'cube' }];
       }
     } catch (e) {
       console.error(e);
@@ -1884,22 +1894,25 @@ function prepareDownloadLink(blob, filename, row) {
 
 async function offerZipDownload(results) {
   const zip = new JSZip();
+  const hasCube = results.some(r => r.kind === 'cube');
+  const hasXmp = results.some(r => r.kind === 'xmp');
+  const splitMixedOutputs = hasCube && hasXmp;
   for (const r of results) {
-    zip.file(r.path || r.name, r.text);
+    const basePath = r.path || r.name;
+    const folder = splitMixedOutputs
+      ? (r.kind === 'cube' ? 'LUT/' : 'LR配置文件/')
+      : '';
+    zip.file(folder + basePath, r.text);
   }
   const blob = await zip.generateAsync({
     type: 'blob',
     compression: 'DEFLATE',
     compressionOptions: { level: 6 }
   });
-  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const modes = getOutputModes();
-  const prefix = modes.length === 2
-    ? (xmpAllCamerasToggle.checked ? 'lut-33-all-xmp' : 'lut-33-xmp')
-    : modes[0] === 'xmp'
-      ? (xmpAllCamerasToggle.checked ? 'lut-all-xmp' : 'lut-xmp')
-      : 'lut-33';
-  const filename = `${prefix}-${ts}.zip`;
+  const zipTs = makeZipTimestamp();
+  const prefix = modes.length === 2 ? 'LUT+XMP' : modes[0] === 'xmp' ? 'XMP' : 'LUT';
+  const filename = `${prefix}_${zipTs}.zip`;
   const url = URL.createObjectURL(blob);
 
   const zipRow = document.createElement('div');
